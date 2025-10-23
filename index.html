@@ -8,20 +8,19 @@
 body{font-family:sans-serif;margin:40px;background:#111;color:#eee}
 button{padding:8px 16px;border:0;border-radius:5px;background:#8ab4f8;color:#111;font-weight:700;cursor:pointer}
 #bar{height:10px;width:0;background:linear-gradient(90deg,#8ab4f8,#7ee787);transition:width .2s;margin-top:12px;border-radius:5px}
-a.dl{display:block;margin-top:12px;color:#7ee787;font-weight:700;text-decoration:none}
 </style>
 </head>
 <body>
 <h2>Разделение PDF на 1,7,13,... и остальные</h2>
+<p>Файл никуда не отправляется — всё делается в браузере.</p>
 <input type="file" id="file" accept="application/pdf">
 <button id="go">Разделить</button>
 <div id="bar"></div>
 <p id="status"></p>
-<div id="links"></div>
 
 <script>
 const f=document.getElementById('file'),go=document.getElementById('go'),
-s=document.getElementById('status'),bar=document.getElementById('bar'),links=document.getElementById('links');
+s=document.getElementById('status'),bar=document.getElementById('bar');
 const setS=t=>s.textContent=t,setP=p=>bar.style.width=p+'%';
 go.onclick=async()=>{
  if(!f.files.length){setS('📂 выбери PDF');return;}
@@ -32,17 +31,16 @@ go.onclick=async()=>{
  setS('📄 страниц: '+n);
  const docA=await PDFLib.PDFDocument.create(),docB=await PDFLib.PDFDocument.create();
  for(let i=0;i<n;i++){const[p]=await src.copyPages(src,[i]);(i%6===0?docA:docB).addPage(p);if(i%10===0)setP(Math.round((i/n)*100));}
- setP(100);
+ setP(100);setS('💾 Сохраняю...');
  const a=await docA.save(),b=await docB.save();
- const make=(blob,name,label)=>{
-   const url=URL.createObjectURL(new Blob([blob],{type:'application/pdf'}));
-   const link=document.createElement('a');link.href=url;link.download=name;link.textContent=label;link.className='dl';
-   links.appendChild(link);
+ const save=(blob,name)=>{
+   const u=URL.createObjectURL(new Blob([blob],{type:'application/pdf'}));
+   const a=document.createElement('a');a.href=u;a.download=name;
+   document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(u);
  };
- links.innerHTML='';
- make(a,'Поручения_1_7_13_и_тд.pdf','📘 Скачать: каждая 6-я');
- make(b,'Поручения_остальные.pdf','📗 Скачать: остальные');
- setS('✅ Готово! Кликни по ссылкам ниже.');
+ save(a,'Поручения_1_7_13_и_тд.pdf');
+ setTimeout(()=>save(b,'Поручения_остальные.pdf'),1000);
+ setS('✅ Готово! Файлы скачаны.');
 };
 </script>
 </body>
